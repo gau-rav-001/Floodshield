@@ -3,8 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Droplets, CloudRain, Waves, Loader2, Info, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Droplets, CloudRain, Waves, Info, CheckCircle2, AlertTriangle, Cloud, Sun, Zap } from "lucide-react";
 import { toast } from "sonner";
+import Navigation from "@/components/Navigation";
+import LoadingAnimation from "@/components/LoadingAnimation";
+import ParameterInfoModal from "@/components/ParameterInfoModal";
 
 interface PredictionResult {
   prediction: number;
@@ -80,8 +83,10 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen py-8 px-4">
-      <div className="container max-w-7xl mx-auto">
+    <>
+      <Navigation />
+      <div className="min-h-screen py-8 px-4 pt-24">
+        <div className="container max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -99,13 +104,18 @@ const Index = () => {
           {/* Main Form */}
           <Card className="md:col-span-2 shadow-[var(--shadow-card)]">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CloudRain className="w-5 h-5 text-primary" />
-                Environmental Data Input
-              </CardTitle>
-              <CardDescription>
-                Enter current environmental parameters for flood risk analysis
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <CloudRain className="w-5 h-5 text-primary" />
+                    Environmental Data Input
+                  </CardTitle>
+                  <CardDescription>
+                    Enter current environmental parameters for flood risk analysis
+                  </CardDescription>
+                </div>
+                <ParameterInfoModal />
+              </div>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -266,58 +276,91 @@ const Index = () => {
                   className="w-full gradient-ocean text-primary-foreground hover:opacity-90 transition-opacity"
                   size="lg"
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Analyzing Data...
-                    </>
-                  ) : (
+                  {!isLoading && (
                     <>
                       <Droplets className="mr-2 h-5 w-5" />
                       Predict Flood Risk
                     </>
                   )}
+                  {isLoading && (
+                    <>
+                      <Droplets className="mr-2 h-5 w-5 animate-bounce" />
+                      Analyzing Data...
+                    </>
+                  )}
                 </Button>
               </form>
 
-              {/* Result Display */}
-              {result && (
-                <Card
-                  className={`mt-6 shadow-[var(--shadow-result)] animate-in slide-in-from-bottom duration-500 ${
-                    result.prediction === 1
-                      ? "border-destructive/50 bg-destructive/5"
-                      : "border-success/50 bg-success/5"
-                  }`}
-                >
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-4">
-                      {result.prediction === 1 ? (
-                        <div className="p-3 rounded-full bg-destructive/10">
-                          <AlertTriangle className="w-8 h-8 text-destructive" />
-                        </div>
-                      ) : (
-                        <div className="p-3 rounded-full bg-success/10">
-                          <CheckCircle2 className="w-8 h-8 text-success" />
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <h3
-                          className={`text-xl font-bold mb-2 ${
-                            result.prediction === 1 ? "text-destructive" : "text-success"
-                          }`}
-                        >
-                          {result.prediction === 1 ? "🚨 Flood Alert" : "✅ Safe Zone"}
-                        </h3>
-                        <p className="text-foreground/80 text-lg">{result.message}</p>
-                        {result.prediction === 1 && (
-                          <p className="mt-3 text-sm text-muted-foreground">
-                            Please take necessary precautions and follow local authority guidelines.
-                          </p>
-                        )}
+              {/* Loading Animation */}
+              {isLoading && <LoadingAnimation />}
+
+              {/* Result Display with Animated Backgrounds */}
+              {result && !isLoading && (
+                <div className={`mt-6 rounded-xl overflow-hidden ${
+                  result.prediction === 1 ? "storm-bg" : "sunny-bg"
+                }`}>
+                  {/* Background Elements */}
+                  {result.prediction === 1 ? (
+                    <div className="relative">
+                      {/* Storm Elements */}
+                      <div className="absolute inset-0 overflow-hidden">
+                        {[...Array(15)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="rain-drop"
+                            style={{
+                              left: `${Math.random() * 100}%`,
+                              animationDelay: `${Math.random() * 2}s`,
+                              animationDuration: `${0.3 + Math.random() * 0.3}s`,
+                            }}
+                          />
+                        ))}
                       </div>
+                      <Zap className="absolute top-4 right-4 w-8 h-8 text-yellow-300 animate-pulse" />
                     </div>
-                  </CardContent>
-                </Card>
+                  ) : (
+                    <div className="relative">
+                      {/* Sunny Elements */}
+                      <Sun className="absolute top-4 right-4 w-12 h-12 text-yellow-400 animate-spin-slow" style={{ animationDuration: '20s' }} />
+                      <Cloud className="absolute top-8 left-4 w-8 h-8 text-white/40 animate-float" />
+                    </div>
+                  )}
+
+                  <Card className="border-0 bg-transparent shadow-[var(--shadow-result)]">
+                    <CardContent className="pt-6 relative z-10">
+                      <div className="flex items-start gap-4">
+                        {result.prediction === 1 ? (
+                          <div className="p-3 rounded-full bg-destructive/20 backdrop-blur-sm">
+                            <AlertTriangle className="w-8 h-8 text-white" />
+                          </div>
+                        ) : (
+                          <div className="p-3 rounded-full bg-success/20 backdrop-blur-sm">
+                            <CheckCircle2 className="w-8 h-8 text-white" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <h3 className={`text-2xl font-bold mb-2 ${
+                            result.prediction === 1 ? "text-white" : "text-white drop-shadow-md"
+                          }`}>
+                            {result.prediction === 1 
+                              ? "🚨 FloodShield Alert: Flood Likely in Next 3 Days — Take Precautions!" 
+                              : "✅ Safe Conditions Detected — No Flood Expected"}
+                          </h3>
+                          <p className={`text-lg ${
+                            result.prediction === 1 ? "text-white/90" : "text-white/95"
+                          }`}>
+                            {result.message}
+                          </p>
+                          {result.prediction === 1 && (
+                            <p className="mt-3 text-sm text-white/80 backdrop-blur-sm bg-white/10 p-3 rounded-lg">
+                              ⚠️ Please take necessary precautions and follow local authority guidelines immediately.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -388,11 +431,12 @@ const Index = () => {
         {/* Footer */}
         <footer className="mt-12 text-center py-6 border-t border-primary/10">
           <p className="text-muted-foreground">
-            Developed by <strong className="text-primary">Gaurav Kumbhare</strong> | Powered by Machine Learning
+            Developed by <strong className="text-primary">Gaurav Kumbhare</strong> | Powered by FloodShield AI 🌐
           </p>
         </footer>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
