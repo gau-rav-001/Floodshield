@@ -24,93 +24,69 @@ interface PredictionResult {
 const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<PredictionResult | null>(null);
-
   const [formData, setFormData] = useState({
-    rainfall: "",
-    river_discharge: "",
-    water_level: "",
-    temperature: "",
-    humidity: "",
-    soil_type: "",
-    elevation: "",
-    latitude: "",
-    longitude: "",
+    rainfall: "", river_discharge: "", water_level: "",
+    temperature: "", humidity: "", soil_type: "",
+    elevation: "", latitude: "", longitude: "",
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  // 🌐 Backend API base URL (change for deployment)
+  const API_URL = "http://127.0.0.1:8000"; // ✅ local FastAPI backend
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); setIsLoading(true);
+    try {
+      const response = await axios.post(`${API_URL}/predict`, {
+        rainfall: parseFloat(formData.rainfall),
+        river_discharge: parseFloat(formData.river_discharge),
+        water_level: parseFloat(formData.water_level),
+        temperature: parseFloat(formData.temperature),
+        humidity: parseFloat(formData.humidity),
+        soil_type: formData.soil_type,
+        elevation: parseFloat(formData.elevation),
+        latitude: parseFloat(formData.latitude),
+        longitude: parseFloat(formData.longitude),
+        station: "Station1", // ✅ required by backend
+      });
+      const data = response.data;
+      if (data.error) toast.error(data.error);
+      else {
+        setResult(data);
+        data.prediction === 1
+          ? toast.error("🚨 Flood Warning Detected!")
+          : toast.success("✅ Area is Safe");
+      }
+    } catch (error) {
+      toast.error("⚠️ Cannot connect to backend. Ensure FastAPI is running on port 8000.");
+    } finally { setIsLoading(false); }
   };
-
-  // 🌐 Use environment variable or fallback to localhost
-const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setIsLoading(true);
-
-  try {
-    const response = await axios.post("/predict", {
-      rainfall: parseFloat(formData.rainfall),
-      river_discharge: parseFloat(formData.river_discharge),
-      water_level: parseFloat(formData.water_level),
-      temperature: parseFloat(formData.temperature),
-      humidity: parseFloat(formData.humidity),
-      soil_type: formData.soil_type,
-      elevation: parseFloat(formData.elevation),
-      latitude: parseFloat(formData.latitude),
-      longitude: parseFloat(formData.longitude),
-    });
-
-    const data = response.data;
-
-    if (data.error) toast.error(data.error);
-    else {
-      setResult(data);
-      if (data.prediction === 1) toast.error("🚨 Flood Warning Detected!");
-      else toast.success("✅ Area is Safe");
-    }
-  } catch (error: any) {
-    console.error("Prediction Error:", error);
-    toast.error("⚠️ Cannot connect to backend. Ensure FastAPI is running at port 8000.");
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
 
   return (
     <>
       <Navigation />
       <div className="min-h-screen py-8 px-4 pt-24">
         <div className="container max-w-7xl mx-auto">
-          {/* Header */}
           <div className="text-center mb-12">
             <div className="flex items-center justify-center gap-3 mb-4">
               <Waves className="w-12 h-12 text-primary wave-animation" />
-              <h1 className="text-4xl md:text-5xl font-bold text-primary">
-                Flood Risk Prediction System
-              </h1>
+              <h1 className="text-4xl md:text-5xl font-bold text-primary">Flood Risk Prediction System</h1>
             </div>
-            <p className="text-muted-foreground text-lg">
-              Advanced Machine Learning for Early Flood Detection
-            </p>
+            <p className="text-muted-foreground text-lg">AI-powered Flood Detection by Gaurav Kumbhare</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {/* Main Form */}
+            {/* Input Form */}
             <Card className="md:col-span-2 shadow-[var(--shadow-card)]">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <CloudRain className="w-5 h-5 text-primary" />
-                      Environmental Data Input
+                      <CloudRain className="w-5 h-5 text-primary" /> Environmental Data Input
                     </CardTitle>
-                    <CardDescription>
-                      Enter current environmental parameters for flood risk analysis
-                    </CardDescription>
+                    <CardDescription>Enter parameters for flood risk analysis</CardDescription>
                   </div>
                   <ParameterInfoModal />
                 </div>
@@ -132,8 +108,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                       <div key={name} className="space-y-2">
                         <Label htmlFor={name}>
                           <span className="flex items-center gap-2">
-                            {Icon && <Icon className="w-4 h-4" />}
-                            {label}
+                            {Icon && <Icon className="w-4 h-4" />} {label}
                           </span>
                         </Label>
                         <Input
@@ -159,28 +134,19 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                   >
                     {!isLoading ? (
                       <>
-                        <Droplets className="mr-2 h-5 w-5" />
-                        Predict Flood Risk
+                        <Droplets className="mr-2 h-5 w-5" /> Predict Flood Risk
                       </>
                     ) : (
                       <>
-                        <Droplets className="mr-2 h-5 w-5 animate-bounce" />
-                        Analyzing Data...
+                        <Droplets className="mr-2 h-5 w-5 animate-bounce" /> Analyzing Data...
                       </>
                     )}
                   </Button>
                 </form>
 
-                {/* Loading Animation */}
                 {isLoading && <LoadingAnimation />}
-
-                {/* Result Display */}
                 {result && !isLoading && (
-                  <div
-                    className={`mt-6 rounded-xl overflow-hidden ${
-                      result.prediction === 1 ? "storm-bg" : "sunny-bg"
-                    }`}
-                  >
+                  <div className={`mt-6 rounded-xl overflow-hidden ${result.prediction === 1 ? "storm-bg" : "sunny-bg"}`}>
                     <Card className="border-0 bg-transparent shadow-[var(--shadow-result)]">
                       <CardContent className="pt-6 relative z-10">
                         <div className="flex items-start gap-4">
@@ -194,13 +160,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                             </div>
                           )}
                           <div className="flex-1">
-                            <h3
-                              className={`text-2xl font-bold mb-2 ${
-                                result.prediction === 1
-                                  ? "text-white"
-                                  : "text-white drop-shadow-md"
-                              }`}
-                            >
+                            <h3 className={`text-2xl font-bold mb-2 ${result.prediction === 1 ? "text-white" : "text-white drop-shadow-md"}`}>
                               {result.prediction === 1
                                 ? "🚨 FloodShield Alert: Flood Likely — Take Precautions!"
                                 : "✅ Safe Conditions Detected — No Flood Expected"}
@@ -219,14 +179,13 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
             <Card className="shadow-[var(--shadow-card)] h-fit sticky top-8">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Info className="w-5 h-5 text-accent" />
-                  How It Works
+                  <Info className="w-5 h-5 text-accent" /> How It Works
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-sm">
                 <p>
-                  Our AI model predicts flood risk based on environmental parameters like rainfall,
-                  discharge, soil, and elevation.
+                  The AI model predicts flood risk based on rainfall, discharge, soil type, and elevation.
+                  <br />Developed by <b>Gaurav Kumbhare (3062)</b>.
                 </p>
               </CardContent>
             </Card>
@@ -236,5 +195,4 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     </>
   );
 };
-
 export default Index;
