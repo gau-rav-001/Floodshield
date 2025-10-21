@@ -1,4 +1,4 @@
-// ------------------------------------------------------------
+// ------------------------------------------------------------ 
 // 🌊 FloodShield Frontend - Prediction Page
 // Author: Gaurav Kumbhare | Roll No: 3062
 // ------------------------------------------------------------
@@ -25,19 +25,26 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<PredictionResult | null>(null);
   const [formData, setFormData] = useState({
-    rainfall: "", river_discharge: "", water_level: "",
-    temperature: "", humidity: "", soil_type: "",
-    elevation: "", latitude: "", longitude: "",
+    rainfall: "",
+    river_discharge: "",
+    water_level: "",
+    temperature: "",
+    humidity: "",
+    soil_type: "",
+    elevation: "",
+    latitude: "",
+    longitude: "",
+    station: "Station1", // ✅ Default valid station
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // 🌐 Backend API base URL (change for deployment)
-  const API_URL = "http://127.0.0.1:8000"; // ✅ local FastAPI backend
+  const API_URL = "http://127.0.0.1:8000"; // ✅ Local backend
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); setIsLoading(true);
+    e.preventDefault();
+    setIsLoading(true);
     try {
       const response = await axios.post(`${API_URL}/predict`, {
         rainfall: parseFloat(formData.rainfall),
@@ -49,8 +56,9 @@ const Index = () => {
         elevation: parseFloat(formData.elevation),
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
-        station: "Station1", // ✅ required by backend
+        station: formData.station, // ✅ dynamically selected
       });
+
       const data = response.data;
       if (data.error) toast.error(data.error);
       else {
@@ -61,7 +69,9 @@ const Index = () => {
       }
     } catch (error) {
       toast.error("⚠️ Cannot connect to backend. Ensure FastAPI is running on port 8000.");
-    } finally { setIsLoading(false); }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -91,6 +101,7 @@ const Index = () => {
                   <ParameterInfoModal />
                 </div>
               </CardHeader>
+
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-4">
@@ -124,6 +135,22 @@ const Index = () => {
                         />
                       </div>
                     ))}
+
+                    {/* ✅ Station Dropdown */}
+                    <div className="space-y-2">
+                      <Label htmlFor="station">Station</Label>
+                      <select
+                        id="station"
+                        name="station"
+                        value={formData.station}
+                        onChange={(e) => setFormData({ ...formData, station: e.target.value })}
+                        className="border-primary/20 focus:border-primary rounded-md w-full p-2"
+                      >
+                        <option value="Station1">Station 1</option>
+                        <option value="Station2">Station 2</option>
+                        <option value="Station3">Station 3</option>
+                      </select>
+                    </div>
                   </div>
 
                   <Button
@@ -160,7 +187,11 @@ const Index = () => {
                             </div>
                           )}
                           <div className="flex-1">
-                            <h3 className={`text-2xl font-bold mb-2 ${result.prediction === 1 ? "text-white" : "text-white drop-shadow-md"}`}>
+                            <h3
+                              className={`text-2xl font-bold mb-2 ${
+                                result.prediction === 1 ? "text-white" : "text-white drop-shadow-md"
+                              }`}
+                            >
                               {result.prediction === 1
                                 ? "🚨 FloodShield Alert: Flood Likely — Take Precautions!"
                                 : "✅ Safe Conditions Detected — No Flood Expected"}
@@ -195,4 +226,5 @@ const Index = () => {
     </>
   );
 };
+
 export default Index;
